@@ -1,7 +1,7 @@
-const User = require("../models/User");
-const jwt = require("jsonwebtoken");
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
 
-// JWT generator
+// ================= JWT GENERATOR =================
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "7d",
@@ -9,16 +9,18 @@ const generateToken = (userId) => {
 };
 
 // ================= REGISTER =================
-exports.registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password)
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields required" });
+    }
 
     const existingUser = await User.findOne({ email });
-    if (existingUser)
+    if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
+    }
 
     const user = await User.create({
       name,
@@ -37,28 +39,35 @@ exports.registerUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
 // ================= LOGIN =================
-exports.loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ message: "Email & password required" });
+    }
 
     const user = await User.findOne({ email }).select("+password");
-    if (!user)
+    if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    if (user.status !== "Active")
+    if (user.status !== "Active") {
       return res.status(403).json({ message: "User inactive" });
+    }
 
     const isMatch = await user.comparePassword(password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     res.json({
       token: generateToken(user._id),
@@ -70,6 +79,9 @@ exports.loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };

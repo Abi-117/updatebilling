@@ -1,10 +1,22 @@
-const router = require('express').Router();
-const {
+import express from "express";
+import {
   createCustomer,
-  getCustomers
-} = require('../controllers/customer.controller');
+  getCustomers,
+  getCustomerById,
+  updateCustomer,
+  deleteCustomer,
+} from "../controllers/customer.controller.js";
 
-router.post('/', createCustomer);
-router.get('/', getCustomers);
+import { protect } from "../middleware/auth.middleware.js";
 
-module.exports = router;
+const router = express.Router();
+
+router.use(protect);
+
+router.post("/", createCustomer);
+router.get("/", getCustomers);
+router.get("/:id", getCustomerById);
+router.put("/:id", updateCustomer);
+router.delete("/:id", deleteCustomer);
+
+export default router;

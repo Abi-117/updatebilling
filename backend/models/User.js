@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select: false, // 👈 password never returned
+      select: false, // 👈 never returned in queries
     },
 
     role: {
@@ -47,20 +47,21 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    strict: true, // 🚫 no extra fields allowed
+    strict: true, // 🚫 blocks extra fields
   }
 );
 
-// 🔒 Hash password
+// 🔒 HASH PASSWORD BEFORE SAVE
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// 🔑 Compare password
+// 🔑 COMPARE PASSWORD
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

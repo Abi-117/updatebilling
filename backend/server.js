@@ -1,10 +1,8 @@
-// =========================
-// BACKEND SERVER ENTRYPOINT
-// =========================
-
+import "./config/env.js"; 
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+
 import { fileURLToPath } from "url";
 import path from "path";
 import connectDB from "./config/db.js";
@@ -14,7 +12,7 @@ import connectDB from "./config/db.js";
 // =========================
 import authRoutes from "./routes/authRoutes.js";
 import customerRoutes from "./routes/customer.routes.js";
-import dashboardRoutes from "./routes/dashboard.routes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import receivableRoutes from "./routes/receivable.routes.js";
 import netRevenueRoutes from "./routes/netRevenue.routes.js";
 import estimateRoutes from "./routes/estimate.routes.js";
@@ -23,7 +21,6 @@ import recurringInvoiceRoutes from "./routes/recurring.routes.js";
 import grnRoutes from "./routes/grn.js";
 import billRoutes from "./routes/purchaseBills.js";
 import supplierRoutes from "./routes/supplier.routes.js";
-import purchaseReturnsRoutes from "./routes/purchaseReturns.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
 import batchRoutes from "./routes/batchRoutes.js";
@@ -41,20 +38,41 @@ import reminderRoutes from "./routes/reminder.routes.js";
 import purchaseRoutes from "./routes/purchase.routes.js";
 import supplierPaymentRoutes from "./routes/supplierPayment.routes.js";
 import sendInvoiceRoutes from "./routes/sendInvoice.routes.js";
+import paymentRoutes from "./routes/payments.js";
+import paymentLinkRoutes from "./routes/paymentLinks.js";
+import purchasePaymentRoutes from "./routes/purchasePayments.js";
+import purchaseReturnRoutes from "./routes/purchaseReturns.js";
+import salesRoutes from "./routes/sales.js";
+
+
 // UTILS
 import { processRecurringInvoices } from "./utils/sendRecurringInvoices.js";
 
 // =========================
 // CONFIG
 // =========================
-dotenv.config();
+
 connectDB();
 
 // =========================
 // EXPRESS APP SETUP
 // =========================
 const app = express();
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow REST tools like Postman
+    const allowed = /^http:\/\/localhost:\d+$/; // any localhost port
+    if (allowed.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // allow cookies/auth headers
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+};
 
+app.use(cors(corsOptions));
 // ⚡ Fix __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,7 +80,6 @@ const __dirname = path.dirname(__filename);
 // =========================
 // MIDDLEWARE
 // =========================
-app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
 // Serve uploaded files
@@ -78,9 +95,11 @@ setInterval(() => {
 // =========================
 // API ROUTES
 // =========================
+
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+
 app.use("/api/receivables", receivableRoutes);
 app.use("/api/net-revenue", netRevenueRoutes);
 
@@ -90,8 +109,9 @@ app.use("/api/recurring-invoices", recurringInvoiceRoutes);
 
 app.use("/api/grns", grnRoutes);
 app.use("/api/purchase-bills", billRoutes);
-app.use("/api", purchaseRoutes);
 app.use("/api/purchases", purchaseRoutes);
+app.use("/api/purchase-payments", purchasePaymentRoutes);
+app.use("/api/purchase-returns", purchaseReturnRoutes);
 
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api", supplierPaymentRoutes);
@@ -114,6 +134,11 @@ app.use("/api/timesheets", timesheetRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api", sendInvoiceRoutes);
+
+app.use("/api/payment-links", paymentLinkRoutes);
+app.use("/api/payments", paymentRoutes);
+
+app.use("/api/sales", salesRoutes);
 // =========================
 // HEALTH CHECK (OPTIONAL)
 // =========================
@@ -124,7 +149,7 @@ app.get("/", (req, res) => {
 // =========================
 // START SERVER
 // =========================
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

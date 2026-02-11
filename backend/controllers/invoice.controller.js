@@ -24,16 +24,30 @@ export const createInvoice = async (req, res) => {
 };
 
 /* ================= GET ALL ================= */
+/* ================= GET ALL ================= */
 export const getInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find({ createdBy: req.user._id })
+    const { customerId } = req.query;
+
+    const filter = {
+      createdBy: req.user._id
+    };
+
+    // ✅ if customerId present, filter by customer
+    if (customerId) {
+      filter.customerId = customerId;
+    }
+
+    const invoices = await Invoice.find(filter)
       .sort({ createdAt: -1 });
 
     res.json(invoices);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /* ================= GET ONE ================= */
 export const getInvoiceById = async (req, res) => {
@@ -176,3 +190,40 @@ export const generateInvoiceFromTimesheets = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+export const getInvoicesByCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    const invoices = await Invoice.find({ customerId })
+      .sort({ createdAt: -1 });
+
+    res.json(invoices);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch invoices" });
+  }
+};
+// GET /api/invoices/monthly-sales
+export const getMonthlySales = async (req, res) => {
+  try {
+    const invoices = await Invoice.find({ createdBy: req.user._id });
+
+    // Compute revenue per month
+    const salesMap = {};
+    invoices.forEach(inv => {
+      const month = new Date(inv.date).toLocaleString("default", { month: "short" });
+      salesMap[month] = (salesMap[month] || 0) + inv.total;
+    });
+
+    const monthlySales = Object.keys(salesMap).map(month => ({
+      month,
+      revenue: salesMap[month],
+    }));
+
+    res.json(monthlySales);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+

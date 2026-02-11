@@ -1,14 +1,16 @@
 import express from "express";
-import {
-  getPurchaseReturns,
-  createPurchaseReturn,
-} from "../controllers/PurchaseReturnController.js";
+import { getPurchaseReturns, createPurchaseReturn } from "../controllers/PurchaseReturnController.js";
 import { getPurchaseBills } from "../controllers/purchaseBillController.js";
 
 const router = express.Router();
 
-router.get("/purchase-bills", getPurchaseBills);
-router.get("/purchase-returns", getPurchaseReturns);
-router.post("/purchase-returns", createPurchaseReturn);
+// GET /api/purchase-returns
+router.get("/", getPurchaseReturns);
+
+// POST /api/purchase-returns
+router.post("/", createPurchaseReturn);
+
+// GET /api/purchase-bills
+router.get("/bills", getPurchaseBills);
 
 export default router;

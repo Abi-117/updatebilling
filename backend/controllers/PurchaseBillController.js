@@ -1,17 +1,30 @@
+import express from "express";
 import PurchaseBill from "../models/PurchaseBill.js";
+import {
+  createPurchaseOrder,
+  verifyPurchasePayment,
+} from "../controllers/purchasePaymentController.js";
 
-// Get all purchase bills
-export const fetchPurchaseBills = async (req, res) => {
+
+
+
+const router = express.Router();
+
+// Payment routes
+router.post("/order", createPurchaseOrder);
+router.post("/verify", verifyPurchasePayment);
+
+// GET all purchase bills
+router.get("/", async (req, res) => {
   try {
     const bills = await PurchaseBill.find()
       .populate("supplier", "name")
       .populate("grn", "grnNo")
       .sort({ createdAt: -1 });
 
-    // Ensure every bill has a billDate
     const billsWithDate = bills.map(bill => ({
       ...bill._doc,
-      billDate: bill.billDate || bill.createdAt
+      billDate: bill.billDate || bill.createdAt,
     }));
 
     res.json(billsWithDate);
@@ -19,21 +32,74 @@ export const fetchPurchaseBills = async (req, res) => {
     console.error("Error fetching purchase bills:", err);
     res.status(500).json({ error: "Server error" });
   }
-};
-// Get single purchase bill
-export const fetchPurchaseBill = async (req, res) => {
-  const bill = await PurchaseBill.findById(req.params.id).populate("supplier grn");
-  if (!bill) return res.status(404).json({ message: "Purchase bill not found" });
-  res.json(bill);
-};
+});
+
+// GET single bill
+router.get("/:id", async (req, res) => {
+  try {
+    const bill = await PurchaseBill.findById(req.params.id)
+      .populate("supplier", "name")
+      .populate("grn", "grnNo");
+
+    if (!bill) {
+      return res.status(404).json({ message: "Purchase bill not found" });
+    }
+
+    res.json({
+      ...bill._doc,
+      billDate: bill.billDate || bill.createdAt,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+/* =========================
+   GET ALL PURCHASE BILLS
+========================= */
 export const getPurchaseBills = async (req, res) => {
   try {
     const bills = await PurchaseBill.find()
       .populate("supplier", "name")
-      .populate("grn", "grnNo");
-    res.json(bills);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch purchase bills" });
+      .populate("grn", "grnNo")
+      .sort({ createdAt: -1 });
+
+    res.json(
+      bills.map(bill => ({
+        ...bill._doc,
+        billDate: bill.billDate || bill.createdAt,
+      }))
+    );
+  } catch (error) {
+    console.error("Get purchase bills error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+/* =========================
+   GET SINGLE PURCHASE BILL
+========================= */
+export const getPurchaseBillById = async (req, res) => {
+  try {
+    const bill = await PurchaseBill.findById(req.params.id)
+      .populate("supplier", "name")
+      .populate("grn", "grnNo");
+
+    if (!bill) {
+      return res.status(404).json({ message: "Purchase bill not found" });
+    }
+
+    res.json({
+      ...bill._doc,
+      billDate: bill.billDate || bill.createdAt,
+    });
+  } catch (error) {
+    console.error("Get bill error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export default router;
